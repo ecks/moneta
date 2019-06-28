@@ -11,10 +11,21 @@ use msf_client::msg::SessionListRet;
 use msf_client::client::MsfClient;
 use msf_client::modules::MsfModule;
 
+pub mod models;
+
+use models::Session;
+
 #[macro_use] extern crate rocket;
+#[macro_use] extern crate diesel;
+#[macro_use] extern crate rocket_contrib;
+
+use diesel::SqliteConnection;
+
+#[database("sqlite_database")]
+pub struct DbConn(SqliteConnection);
 
 #[get("/cnc")]
-fn cnc() -> &'static str {
+fn cnc(sql_conn: DbConn) -> &'static str {
     let mut client = MsfClient::new("msf", "1234", "http://127.0.0.1:55553/api/".to_string())
                                .expect("Trying to connect");
 
@@ -120,6 +131,8 @@ fn cnc() -> &'static str {
 
     });
 
+    println!("{:?}", Session::all(&sql_conn));
+
     let mut exp_mod = client.modules()
                             .use_exploit("exploit/multi/handler");
 
@@ -134,5 +147,7 @@ fn cnc() -> &'static str {
  }
  
  fn main() {
-     rocket::ignite().mount("/", routes![cnc]).launch();
+     rocket::ignite()
+         .attach(DbConn::fairing())
+         .mount("/", routes![cnc]).launch();
  }
