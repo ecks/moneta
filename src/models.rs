@@ -23,4 +23,9 @@ impl Session {
     pub fn all(conn: &SqliteConnection) -> Vec<Session> {
         all_sessions.order(sessions::id.desc()).load::<Session>(conn).unwrap()
     }
+
+    pub fn insert(sess_id: i32, conn: &SqliteConnection) -> bool {
+        let s = Session { id: None, sess_id };
+        diesel::insert_into(sessions::table).values(&s).execute(conn).is_ok()
+    }
 }
